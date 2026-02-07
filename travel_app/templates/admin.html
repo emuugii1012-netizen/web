@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ Хэсэг - Бүртгэлүүд</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container admin-container">
+        <header>
+            <h1>🔐 Админ Хэсэг</h1>
+            <p>Бүх аяллын бүртгэлүүд</p>
+        </header>
+
+        <div class="admin-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">← Нүүр хуудас руу буцах</a>
+            <a href="{{ url_for('download') }}" class="btn btn-primary">📥 Excel файл татах</a>
+        </div>
+
+        {% if registrations %}
+            <div class="stats">
+                <p>Нийт бүртгэл: <strong>{{ registrations|length }}</strong></p>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Огноо</th>
+                            <th>Нэр</th>
+                            <th>Утас</th>
+                            <th>И-мэйл</th>
+                            <th>Чиглэл</th>
+                            <th>Хөдлөх огноо</th>
+                            <th>Багц</th>
+                            <th>Нийт үнэ</th>
+                            <th>Урьдчилгаа</th>
+                            <th>Төлсөн</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reg in registrations %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ reg.timestamp }}</td>
+                            <td>{{ reg.full_name }}</td>
+                            <td>{{ reg.phone }}</td>
+                            <td>{{ reg.email }}</td>
+                            <td>{{ reg.route }}</td>
+                            <td>{{ reg.departure_date }}</td>
+                            <td>{{ reg.package }}</td>
+                            <td>{{ reg.total_price }} ₮</td>
+                            <td>{{ reg.deposit }} ₮</td>
+                            <td>
+                                {% if reg.deposit_confirmed == 'Yes' %}
+                                    <span class="badge badge-success">✓ Тийм</span>
+                                {% else %}
+                                    <span class="badge badge-warning">✗ Үгүй</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>📭 Бүртгэл олдсонгүй</p>
+                <p>Одоогоор ямар ч бүртгэл байхгүй байна.</p>
+            </div>
+        {% endif %}
+
+        <footer>
+            <p>Travel Registration System © 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

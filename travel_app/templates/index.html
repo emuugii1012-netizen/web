@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аяллын Бүртгэлийн Систем</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 Аяллын Бүртгэлийн Систем</h1>
+            <p>Та өөрийн сонгосон аяллын чиглэлээ бүртгүүлнэ үү</p>
+        </header>
+
+        <!-- Flash мессежүүд -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Бүртгэлийн форм -->
+        <form id="registrationForm" action="{{ url_for('submit') }}" method="POST">
+            
+            <!-- Аяллын чиглэл сонгох -->
+            <div class="form-group">
+                <label for="route">Аяллын чиглэл:</label>
+                <select id="route" name="route" required onchange="updatePackages()">
+                    <option value="">-- Чиглэл сонгоно уу --</option>
+                    {% for route, date in routes.items() %}
+                        <option value="{{ route }}" data-date="{{ date }}">{{ route }} ({{ date }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Аяллын багц сонгох -->
+            <div class="form-group">
+                <label for="package">Аяллын багц:</label>
+                <select id="package" name="package" required onchange="updatePrice()">
+                    <option value="">-- Эхлээд чиглэл сонгоно уу --</option>
+                </select>
+            </div>
+
+            <!-- Үнийн мэдээлэл харуулах -->
+            <div id="priceInfo" class="price-info" style="display: none;">
+                <div class="price-row">
+                    <span class="label">Нийт үнэ:</span>
+                    <span id="totalPrice" class="price">0 ₮</span>
+                </div>
+                <div class="price-row deposit">
+                    <span class="label">50% урьдчилгаа:</span>
+                    <span id="depositAmount" class="price">0 ₮</span>
+                </div>
+                <div class="price-row">
+                    <span class="label">Хөдлөх огноо:</span>
+                    <span id="departureDate" class="date">-</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Хэрэглэгчийн мэдээлэл -->
+            <h3>Хэрэглэгчийн мэдээлэл</h3>
+
+            <div class="form-group">
+                <label for="full_name">Бүтэн нэр:</label>
+                <input type="text" id="full_name" name="full_name" required 
+                       placeholder="Жишээ: Болдбаатар Батсайхан">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Утасны дугаар (8 орон):</label>
+                <input type="text" id="phone" name="phone" required 
+                       pattern="\d{8}" maxlength="8"
+                       placeholder="99001122">
+                <small>Зөвхөн 8 оронтой тоо оруулна уу</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">И-мэйл:</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="example@email.com">
+            </div>
+
+            <hr>
+
+            <!-- Урьдчилгаа төлсөн эсэхийг баталгаажуулах -->
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="deposit_confirmed" name="deposit_confirmed" required>
+                    <span>Би нийт аяллын зардлын 50%-ийг урьдчилгаа төлсөн болохыг баталгаажуулж байна</span>
+                </label>
+            </div>
+
+            <!-- Submit товч -->
+            <button type="submit" class="submit-btn">📝 Бүртгэл илгээх</button>
+        </form>
+
+        <footer>
+            <p>Асуулт байвал холбоо барина уу: <strong>+976 1234-5678</strong></p>
+        </footer>
+    </div>
+
+    <script>
+        // Аяллын багцуудын өгөгдөл
+        const packagesData = {{ packages|tojson }};
+
+        // Чиглэл сонгоход багцуудыг шинэчлэх
+        function updatePackages() {
+            const routeSelect = document.getElementById('route');
+            const packageSelect = document.getElementById('package');
+            const selectedRoute = routeSelect.value;
+
+            // Багц талбарыг цэвэрлэх
+            packageSelect.innerHTML = '<option value="">-- Багц сонгоно уу --</option>';
+            
+            // Үнийн мэдээлэл нуух
+            document.getElementById('priceInfo').style.display = 'none';
+
+            if (selectedRoute && packagesData[selectedRoute]) {
+                // Сонгогдсон чиглэлийн багцуудыг нэмэх
+                const packages = packagesData[selectedRoute];
+                for (let packageName in packages) {
+                    const option = document.createElement('option');
+                    option.value = packageName;
+                    option.textContent = packageName + ' - ' + packages[packageName].toLocaleString() + ' ₮';
+                    option.setAttribute('data-price', packages[packageName]);
+                    packageSelect.appendChild(option);
+                }
+            }
+        }
+
+        // Багц сонгоход үнийг харуулах
+        function updatePrice() {
+            const routeSelect = document.getElementById('route');
+            const packageSelect = document.getElementById('package');
+            const priceInfo = document.getElementById('priceInfo');
+            
+            const selectedRoute = routeSelect.value;
+            const selectedPackage = packageSelect.value;
+
+            if (selectedRoute && selectedPackage) {
+                const price = packagesData[selectedRoute][selectedPackage];
+                const deposit = price / 2;
+                const departureDate = routeSelect.options[routeSelect.selectedIndex].getAttribute('data-date');
+
+                // Үнийн мэдээлэл харуулах
+                document.getElementById('totalPrice').textContent = price.toLocaleString() + ' ₮';
+                document.getElementById('depositAmount').textContent = deposit.toLocaleString() + ' ₮';
+                document.getElementById('departureDate').textContent = departureDate;
+                priceInfo.style.display = 'block';
+            }
+        }
+
+        // Форм илгээхээс өмнө баталгаажуулалт
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            const phone = document.getElementById('phone').value;
+            const depositConfirmed = document.getElementById('deposit_confirmed').checked;
+
+            // Утасны дугаарын шалгалт
+            if (!/^\d{8}$/.test(phone)) {
+                e.preventDefault();
+                alert('Утасны дугаар зөвхөн 8 оронтой тоо байх ёстой!');
+                return false;
+            }
+
+            // Урьдчилгаа төлсөн эсэхийг шалгах
+            if (!depositConfirmed) {
+                e.preventDefault();
+                alert('Та урьдчилгаа төлсөн эсэхээ баталгаажуулна уу!');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
